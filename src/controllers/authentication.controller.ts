@@ -31,39 +31,48 @@ class AuthenticationController implements IController {
     private register = async (req:Request,res:Response,next:NextFunction)=>{
       const userData:IUser = req.body;
 
-      if(await this.user.findOne({email:userData.email})) {
-        next(new EmailAlreadyExistsException(userData.email));
-      }else{
-        const hashedPassword = await hash(userData.password,10);
-        const user = await this.user.create({
-          ...userData,
-          password:hashedPassword
-        });
-
-        user.password = undefined;
-        res.status(200).json({success:true,message:'Registeration successfull'})
+      try {
+        if(await this.user.findOne({email:userData.email})) {
+          next(new EmailAlreadyExistsException(userData.email));
+        }else{
+          const hashedPassword = await hash(userData.password,10);
+          const user = await this.user.create({
+            ...userData,
+            password:hashedPassword
+          });
+  
+          user.password = undefined;
+          res.status(200).json({success:true,message:'Registeration successfull'})
+        }  
+      } catch (error) {
+        res.status(500).json({success:false,message:error.message})
       }
+      
     }
 
     private login = async (req:Request,res:Response,next:NextFunction)=>{
+      
       const userData:IUser = req.body;
 
-      const user = await this.user.findOne({email:userData.email})
+      try {
+        const user = await this.user.findOne({email:userData.email})
 
-      
-      if(user) {
-        if(user.password) {
-          const isPasswordSame = await compare(userData.password,user.password)
+        if(user) {
+          if(user.password) {
+            const isPasswordSame = await compare(userData.password,user.password)
 
-          if(isPasswordSame) {
-            user.password = undefined;
-            const tokenData:IJwt = this.createToken(user);
+            if(isPasswordSame) {
+              user.password = undefined;
+              const tokenData:IJwt = this.createToken(user);
 
-            // res.setHeader('Set-Cookie',[this.createCookie(tokenData)]);
-            res.status(200).json({success:true,token:tokenData,user});
-          }else next(new InvalidCredentialsException())
-        }
-      }else next(new InvalidCredentialsException())
+              // res.setHeader('Set-Cookie',[this.createCookie(tokenData)]);
+              res.status(200).json({success:true,token:tokenData,user});
+            }else next(new InvalidCredentialsException())
+          }
+        }else next(new InvalidCredentialsException())
+      } catch (error) {
+        res.status(500).json({success:false,message:error.message})
+      }
     }
 
     private loggingOut = (request: Request, response: Response) => {
