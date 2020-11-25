@@ -2,11 +2,7 @@ import {Schema,model,Document} from 'mongoose';
 import IUser from '../interfaces/user.interface';
 
 const userSchema = new Schema({
-  firstName:{
-    type:String,
-    required:true
-  },
-  lastName:{
+  username:{
     type:String,
     required:true
   },
